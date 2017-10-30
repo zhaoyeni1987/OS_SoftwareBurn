@@ -73,3 +73,50 @@ void Insert16CRC_U8(unsigned char* pu8Start, unsigned int u32Length, unsigned sh
 
 	*pu16CrcAddr = wCRC;
 }
+
+static unsigned int crc32_tab[256];
+
+unsigned int fun_Reflect(unsigned int ref, unsigned char ch)
+{
+	unsigned int value = 0;
+	int i = 0;
+	for (i = 1; i<(ch + 1); i++)
+	{
+		if (ref & 1)
+			value |= 1 << (ch - i);
+
+		ref >>= 1;
+	}
+	return value;
+}
+
+void fun_Init_CRC32(void)
+{
+	unsigned int ulPolynomial = 0x04c11db7;
+	unsigned int i = 0, j = 0;
+
+	for (i = 0; i <= 0xFF; i++) /*256 Values representing ascii character ades*/
+	{
+		crc32_tab[i] = fun_Reflect(i, 8) << 24;
+		for (j = 0; j<8; j++)
+		{
+			crc32_tab[i] = (crc32_tab[i] << 1) ^ (crc32_tab[i] & (1 << 31) ? ulPolynomial : 0);
+		}
+		crc32_tab[i] = fun_Reflect(crc32_tab[i], 32);
+	}
+	return;
+}
+
+unsigned int CalCRC32(unsigned char *array, int nDatalen)
+{
+	unsigned int dGain = 0xFFFFFFFF;
+	int i = 0;
+	for (i = 0; i<256; i++)
+	{
+		crc32_tab[i] = 0x00000000;
+	}
+	fun_Init_CRC32();
+	while (nDatalen--)
+		dGain = (dGain >> 8) ^ crc32_tab[(dGain & 0xFF) ^ ((*array++) & 0xFF)];
+	return dGain ^ 0xFFFFFFFF;	/*解算出的校验和*/
+}

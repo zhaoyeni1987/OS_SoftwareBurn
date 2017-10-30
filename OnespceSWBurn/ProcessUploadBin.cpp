@@ -12,6 +12,8 @@ CProcessUploadBin::CProcessUploadBin()
 	m_bSmallLessOne = false;
 	m_bShouldNext = false;
 	m_errCount = 0;
+	m_Crc32 = 0;
+	m_LengthBin = 0;
 }
 
 void CProcessUploadBin::FirstData(unsigned char* pData)
@@ -157,6 +159,9 @@ void CProcessUploadBin::ReadBin(QString strBinPath)
 	m_LengthBin = m_Bin.length();
 	m_PackageNum = m_LengthBin / 250;
 	m_LessLength = m_LengthBin % 250;
+
+	m_Crc32 = CalCRC32((unsigned char*)m_Bin.data(), m_LengthBin);
+
 	if (m_LessLength > 0)
 		m_PackageNum++;
 
@@ -168,4 +173,14 @@ void CProcessUploadBin::ReadBin(QString strBinPath)
 	}
 
 	m_pBin = m_Bin.data();
+}
+
+unsigned int CProcessUploadBin::GetCrc32()
+{
+	return m_Crc32;
+}
+
+unsigned int CProcessUploadBin::GetBinLength()
+{
+	return m_LengthBin;
 }

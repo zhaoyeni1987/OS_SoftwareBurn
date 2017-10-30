@@ -19,6 +19,8 @@ extern "C"{
 
 unsigned short CalCRC16(void *pData, unsigned int dwNumOfBytes);
 
+unsigned int CalCRC32(unsigned char* pData, int dwNumOfBytes);
+
 void Insert16CRC_U8(unsigned char* pu8Start, unsigned int u32Length, unsigned short* pu16CrcAddr);
 
 #ifdef __cplusplus

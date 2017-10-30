@@ -2,9 +2,11 @@
 #include <QFileDialog>
 #include "ProcessEnterBurnSta.h"
 #include "ProcessUploadBin.h"
+#include "ProcessCheck.h"
 
 #define PROCESS_ENTER_BURN_STA	(0)
 #define PROCESS_UPLOAD_BIN		(1)
+#define PROCESS_CHECK			(2)
 
 #define SECOND					(1000)
 #define MSECOND					(1)
@@ -80,6 +82,20 @@ void mainframe::PrepareProcess()
 	msg_UploadBin.SetBatchData(uploadBin, 263);
 	m_vpProcess[PROCESS_UPLOAD_BIN]->BindSendMessage(msg_UploadBin);
 
+	//------------process: check
+	CProcess* pCheck = new CProcessCheck;
+	m_vpProcess.append(pCheck);
+
+	m_vpProcess[PROCESS_CHECK]->SetTimeOut(1 * SECOND);
+	m_vpProcess[PROCESS_CHECK]->SetRepeatTime(100 * MSECOND);
+	connect(m_vpProcess[PROCESS_CHECK], SIGNAL(ProcessFinished(QString)), this, SLOT(ProcessEnd(QString)));
+	connect(m_vpProcess[PROCESS_CHECK], SIGNAL(ProcessInfo(QString)), this, SLOT(ProcessInfo(QString)));
+
+	CMessage msg_Check("msg_check_bin");
+	msg_Check.SetMessageType(EN_SERIAL);
+	unsigned char check[8] = { 0x55,0xAA,0x00,0x00,0x02,0xF6,0x00,0x00 };
+	msg_Check.SetBatchData(check, 8);
+	m_vpProcess[PROCESS_CHECK]->BindSendMessage(msg_Check);
 }
 
 void mainframe::PrintInfo(QColor& col, QString strInfo)
@@ -135,19 +151,6 @@ void mainframe::ProcessEnd(unsigned int processIndex)
 		PrintInfo(COLOR_GREEN, QString(">>INFO>>: Process \"%1\" complete!").arg(strProcessName));
 	else if (result == 0xDD)
 		PrintInfo(COLOR_YELLOW, QString("++WARN++: Process \"%1\" overtime or interrupt!").arg(strProcessName));
-
-#if 0
-	if (processIndex == PROCESS_ENTER_BURN_STA)
-	{
-		unsigned result = m_vpProcess[PROCESS_ENTER_BURN_STA]->GetRunResult();
-		if (result == 0xBB)
-			PrintInfo(COLOR_RED, QString("**ERROR**: Process \"%1\" found some error!").arg(strProcessName));
-		else if (result == 0xAA)
-			PrintInfo(COLOR_GREEN, QString(">>INFO>>: Process \"%1\" complete!").arg(strProcessName));
-		else if (result == 0xDD)
-			PrintInfo(COLOR_YELLOW, QString("++WARN++: Process \"%1\" overtime or interrupt!").arg(strProcessName));
-	}
-#endif
 }
 
 void mainframe::Completion(float value)
@@ -211,6 +214,7 @@ void mainframe::Burn()
 		{
 			m_vpProcess[PROCESS_ENTER_BURN_STA]->BindInterface((void*)&m_stSerialConfigInfo);
 			m_vpProcess[PROCESS_UPLOAD_BIN]->BindInterface((void*)&m_stSerialConfigInfo);
+			m_vpProcess[PROCESS_CHECK]->BindInterface((void*)&m_stSerialConfigInfo);
 			m_vpProcess[PROCESS_ENTER_BURN_STA]->start();
 			//PrintInfo(COLOR_BLACK, QString("Process \"%1\" have been started!").arg(m_vpProcess[PROCESS_ENTER_BURN_STA]->GetName()));
 		}
@@ -220,6 +224,9 @@ void mainframe::Burn()
 
 		CProcessUploadBin* pTemp = (CProcessUploadBin*)m_vpProcess[PROCESS_UPLOAD_BIN];
 		pTemp->ReadBin(m_strBinPath);
+
+		CProcessCheck* pTemp1 = (CProcessCheck*)m_vpProcess[PROCESS_CHECK];
+		pTemp1->SetBinInfo(pTemp->GetBinLength(), pTemp->GetCrc32());
 	}
 	else				//if the process have started
 	{

@@ -12,6 +12,9 @@ public:
 	unsigned short GetPackageNum();
 	unsigned short GetCurPackageNum();
 
+	unsigned int GetCrc32();
+	unsigned int GetBinLength();
+
 signals:
 	void UploadInfo();
 	void Completion(float value);
@@ -36,4 +39,6 @@ private:
 	unsigned char m_errCount;
 
 	bool m_bShouldNext;
+
+	unsigned int m_Crc32;
 };
