@@ -3,7 +3,7 @@
 
 CProcessCheck::CProcessCheck()
 {
-	SetName("EnterBin");
+	SetName("CheckBin");
 
 	m_binLength = 0;
 	m_crc32 = 0;

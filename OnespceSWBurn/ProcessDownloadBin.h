@@ -11,6 +11,9 @@ public:
 
 	void SetBinInfo(unsigned int lengthBin);
 
+signals:
+	void Completion(float value);
+
 private:
 	EN_PROCESS_CRITERION ReceiveCriterion(unsigned char* pData, unsigned int size);
 	void ChangeData(unsigned char* pData);

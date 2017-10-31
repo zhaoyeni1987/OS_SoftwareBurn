@@ -70,6 +70,8 @@ void CProcessDownloadBin::ChangeData(unsigned char* pData)
 		pData[3]++;
 	}
 
+	emit Completion((float)m_curPackage / (float)(m_packageNum - 1));
+
 	Insert16CRC_U8(pData + 2, 6, (unsigned short*)&pData[8]);
 }
 

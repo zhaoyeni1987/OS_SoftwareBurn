@@ -20,6 +20,7 @@ private:
 	Ui::mainframeClass ui;
 
 	void GetSerialPortInfo();
+	void GlogInit();
 	STRU_SERIAL_CONFIG_INFO m_stSerialConfigInfo;
 
 private slots:

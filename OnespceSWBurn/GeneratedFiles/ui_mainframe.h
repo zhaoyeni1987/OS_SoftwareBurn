@@ -193,6 +193,11 @@ public:
         pushButtonBurn = new QPushButton(mainframeClass);
         pushButtonBurn->setObjectName(QStringLiteral("pushButtonBurn"));
         pushButtonBurn->setMinimumSize(QSize(80, 50));
+        QIcon icon;
+        icon.addFile(QStringLiteral(":/mainframe/image/start_burn.png"), QSize(), QIcon::Normal, QIcon::Off);
+        pushButtonBurn->setIcon(icon);
+        pushButtonBurn->setIconSize(QSize(40, 40));
+        pushButtonBurn->setFlat(true);
 
         gridLayout->addWidget(pushButtonBurn, 2, 0, 1, 1);
 
@@ -211,12 +216,15 @@ public:
         QObject::connect(pushButtonBurn, SIGNAL(clicked()), mainframeClass, SLOT(Burn()));
         QObject::connect(pushButtonOpenBin, SIGNAL(clicked()), mainframeClass, SLOT(OpenBin()));
 
+        pushButtonOpenBin->setDefault(true);
+
+
         QMetaObject::connectSlotsByName(mainframeClass);
     } // setupUi
 
     void retranslateUi(QDialog *mainframeClass)
     {
-        mainframeClass->setWindowTitle(QApplication::translate("mainframeClass", "mainframe", Q_NULLPTR));
+        mainframeClass->setWindowTitle(QApplication::translate("mainframeClass", "Onespace Software Burn \302\251 zhaoyeni", Q_NULLPTR));
         label->setText(QApplication::translate("mainframeClass", "Bin path:", Q_NULLPTR));
         pushButtonOpenBin->setText(QApplication::translate("mainframeClass", "Open", Q_NULLPTR));
         groupBoxSerialSetting->setTitle(QApplication::translate("mainframeClass", "Serial Port Setting:", Q_NULLPTR));
@@ -257,7 +265,7 @@ public:
          << QApplication::translate("mainframeClass", "MARK", Q_NULLPTR)
          << QApplication::translate("mainframeClass", "SPACE", Q_NULLPTR)
         );
-        pushButtonBurn->setText(QApplication::translate("mainframeClass", "Burn", Q_NULLPTR));
+        pushButtonBurn->setText(QString());
     } // retranslateUi
 
 };

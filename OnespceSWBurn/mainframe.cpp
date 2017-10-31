@@ -5,13 +5,13 @@
 #include "ProcessCheck.h"
 #include "ProcessQuitBurnSta.h"
 #include "ProcessDownloadBin.h"
+#include "logging.h"
 
 #define PROCESS_ENTER_BURN_STA	(0)
 #define PROCESS_UPLOAD_BIN		(1)
 #define PROCESS_CHECK			(2)
 #define PROCESS_DOWNLOAD_BIN	(3)
 #define PROCESS_QUIT_BURN_STA	(4)
-
 
 #define SECOND					(1000)
 #define MSECOND					(1)
@@ -22,10 +22,16 @@
 #define COLOR_GREEN				(QColor(0,198,0))
 #define COLOR_GRAY				(QColor(128,128,128))
 
+using namespace google;
+
 mainframe::mainframe(QWidget *parent)
 	: QDialog(parent)
 {
 	ui.setupUi(this);
+
+	GlogInit();
+
+	LOG(INFO) << "系统启动完成";
 
 	QList<QSerialPortInfo> list = QSerialPortInfo::availablePorts();
 
@@ -46,11 +52,30 @@ mainframe::mainframe(QWidget *parent)
 	m_bHaveStarted = false;
 
 	PrepareProcess();
+
+	LOG(INFO) << "流程设置完成";
 }
 
 mainframe::~mainframe()
 {
 
+}
+
+void mainframe::GlogInit()
+{
+	QDir dir;
+	QString path = dir.currentPath();
+	path += "/log";
+	FLAGS_log_dir = path.toStdString();
+	path += "/INFO_";
+	InitGoogleLogging("Interface Message Control");
+	SetLogDestination(google::GLOG_INFO, path.toLatin1().data());
+	SetStderrLogging(google::GLOG_INFO);
+	SetLogFilenameExtension("log_");
+	FLAGS_colorlogtostderr = true;	// Set log color
+	FLAGS_logbufsecs = 0;			// Set log output speed(s)
+									//FLAGS_max_log_size = 1024;		// Set max log file size
+	FLAGS_stop_logging_if_full_disk = true;  // If disk is full
 }
 
 void mainframe::PrepareProcess()
@@ -78,12 +103,13 @@ void mainframe::PrepareProcess()
 	m_vpProcess[PROCESS_UPLOAD_BIN]->SetRepeatTime(10 * MSECOND);
 	connect(m_vpProcess[PROCESS_UPLOAD_BIN], SIGNAL(ProcessFinished(QString)), this, SLOT(ProcessEnd(QString)));
 	connect(m_vpProcess[PROCESS_UPLOAD_BIN], SIGNAL(ProcessInfo(QString)), this, SLOT(ProcessInfo(QString)));
-	CProcessUploadBin* pTemp = (CProcessUploadBin*)m_vpProcess[PROCESS_UPLOAD_BIN];
-	connect(pTemp, SIGNAL(Completion(float)), this, SLOT(Completion(float)));
+	CProcessUploadBin* pUploadBin1 = (CProcessUploadBin*)m_vpProcess[PROCESS_UPLOAD_BIN];
+	connect(pUploadBin1, SIGNAL(Completion(float)), this, SLOT(Completion(float)));
 
 	CMessage msg_UploadBin("msg_upload_bin");
 	msg_UploadBin.SetMessageType(EN_SERIAL);
 	unsigned char uploadBin[263];
+	memset(uploadBin, 0, sizeof(unsigned char) * 263);
 	msg_UploadBin.SetBatchData(uploadBin, 263);
 	m_vpProcess[PROCESS_UPLOAD_BIN]->BindSendMessage(msg_UploadBin);
 
@@ -107,9 +133,11 @@ void mainframe::PrepareProcess()
 	m_vpProcess.append(pDownloadBin);
 
 	m_vpProcess[PROCESS_DOWNLOAD_BIN]->SetTimeOut(1000 * SECOND);
-	m_vpProcess[PROCESS_DOWNLOAD_BIN]->SetRepeatTime(100 * MSECOND);
+	m_vpProcess[PROCESS_DOWNLOAD_BIN]->SetRepeatTime(10 * MSECOND);
 	connect(m_vpProcess[PROCESS_DOWNLOAD_BIN], SIGNAL(ProcessFinished(QString)), this, SLOT(ProcessEnd(QString)));
 	connect(m_vpProcess[PROCESS_DOWNLOAD_BIN], SIGNAL(ProcessInfo(QString)), this, SLOT(ProcessInfo(QString)));
+	CProcessDownloadBin* pDownloadBin1 = (CProcessDownloadBin*)m_vpProcess[PROCESS_DOWNLOAD_BIN];
+	connect(pDownloadBin1, SIGNAL(Completion(float)), this, SLOT(Completion(float)));
 
 	CMessage msg_DownloadBin("msg_download_bin");
 	msg_DownloadBin.SetMessageType(EN_SERIAL);
@@ -166,7 +194,9 @@ void mainframe::ProcessEnd(QString strProcessName)
 	if (lastProcessComplete)
 	{
 		ui.groupBoxSerialSetting->setEnabled(true);
-		ui.pushButtonBurn->setText("Burn");
+		//ui.pushButtonBurn->setText("Burn");
+		ui.pushButtonBurn->setIcon(QIcon(":/mainframe/image/start_burn.png"));
+		ui.pushButtonBurn->setToolTip("Start Burn");
 		m_bHaveStarted = false;
 	}
 }
@@ -237,6 +267,7 @@ void mainframe::OpenBin()
 		m_strBinPath = fileName;
 		ui.pushButtonBurn->setEnabled(true);
 		ui.progressBar->setEnabled(true);
+		ui.pushButtonBurn->setToolTip("Start Burn");
 	}
 }
 
@@ -269,7 +300,9 @@ void mainframe::Burn()
 			pDownloadBin->SetBinInfo(pUploadBin->GetBinLength());
 		}
 
-		ui.pushButtonBurn->setText("Stop");
+		//ui.pushButtonBurn->setText("Stop");
+		ui.pushButtonBurn->setIcon(QIcon(":/mainframe/image/stop_burn.png"));
+		ui.pushButtonBurn->setToolTip("Stop Burn");
 		m_bHaveStarted = true;
 	}
 	else				//if the process have started
@@ -281,7 +314,9 @@ void mainframe::Burn()
 				m_vpProcess[i]->StopProcess();
 		}
 
-		ui.pushButtonBurn->setText("Burn");
+		//ui.pushButtonBurn->setText("Burn");
+		ui.pushButtonBurn->setIcon(QIcon(":/mainframe/image/start_burn.png"));
+		ui.pushButtonBurn->setToolTip("Start Burn");
 		m_bHaveStarted = false;
 	}
 }

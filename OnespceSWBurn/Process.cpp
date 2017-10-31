@@ -148,6 +148,13 @@ void CProcess::SendTimer()
 	{
 		if (m_pSerial != NULL)
 		{
+			if (m_bFirstRun == false)
+			{
+				m_bFirstRun = true;
+				FirstData(m_pSerialSendData);
+			}
+			else
+				ChangeData(m_pSerialSendData);
 			QString strInfo = GetName();
 			strInfo += "("; strInfo += m_pSerial->portName(); strInfo += ") send data: ";
 			int size = m_SendMessage.SignalListSize();
@@ -158,13 +165,7 @@ void CProcess::SendTimer()
 				strInfo += QString::number(m_pSerialSendData[i], 16);
 				strInfo += " ";
 			}
-			if (m_bFirstRun == false)
-			{
-				m_bFirstRun = true;
-				FirstData(m_pSerialSendData);
-			}
-			else
-				ChangeData(m_pSerialSendData);
+
 			m_pSerial->write((char*)m_pSerialSendData, m_SendMessage.SignalListSize());
 			LOG(INFO) << strInfo.toStdString();
 

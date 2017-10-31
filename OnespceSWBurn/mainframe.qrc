@@ -1,4 +1,9 @@
 <RCC>
-    <qresource prefix="mainframe">
+    <qresource prefix="/mainframe">
+        <file>image/main.ico</file>
+        <file>image/start_burn.png</file>
+        <file>image/stop_burn.png</file>
+        <file>image/start_focus.png</file>
+        <file>image/stop_focus.png</file>
     </qresource>
 </RCC>
