@@ -3,10 +3,15 @@
 #include "ProcessEnterBurnSta.h"
 #include "ProcessUploadBin.h"
 #include "ProcessCheck.h"
+#include "ProcessQuitBurnSta.h"
+#include "ProcessDownloadBin.h"
 
 #define PROCESS_ENTER_BURN_STA	(0)
 #define PROCESS_UPLOAD_BIN		(1)
 #define PROCESS_CHECK			(2)
+#define PROCESS_DOWNLOAD_BIN	(3)
+#define PROCESS_QUIT_BURN_STA	(4)
+
 
 #define SECOND					(1000)
 #define MSECOND					(1)
@@ -96,6 +101,37 @@ void mainframe::PrepareProcess()
 	unsigned char check[8] = { 0x55,0xAA,0x00,0x00,0x02,0xF6,0x00,0x00 };
 	msg_Check.SetBatchData(check, 8);
 	m_vpProcess[PROCESS_CHECK]->BindSendMessage(msg_Check);
+
+	//------------process: download bin
+	CProcess* pDownloadBin = new CProcessDownloadBin;
+	m_vpProcess.append(pDownloadBin);
+
+	m_vpProcess[PROCESS_DOWNLOAD_BIN]->SetTimeOut(1000 * SECOND);
+	m_vpProcess[PROCESS_DOWNLOAD_BIN]->SetRepeatTime(100 * MSECOND);
+	connect(m_vpProcess[PROCESS_DOWNLOAD_BIN], SIGNAL(ProcessFinished(QString)), this, SLOT(ProcessEnd(QString)));
+	connect(m_vpProcess[PROCESS_DOWNLOAD_BIN], SIGNAL(ProcessInfo(QString)), this, SLOT(ProcessInfo(QString)));
+
+	CMessage msg_DownloadBin("msg_download_bin");
+	msg_DownloadBin.SetMessageType(EN_SERIAL);
+	unsigned char downloadBin[10] = { 0x55,0xAA,0x02,0x00,0x02,0xF4,0x00,0x00,0x00,0x00};
+	msg_DownloadBin.SetBatchData(downloadBin, 10);
+	m_vpProcess[PROCESS_DOWNLOAD_BIN]->BindSendMessage(msg_DownloadBin);
+
+	//------------process: quit burn sta
+	CProcess* pQuitBurnSta = new CProcessQuitBurnSta;
+	m_vpProcess.append(pQuitBurnSta);
+
+	m_vpProcess[PROCESS_QUIT_BURN_STA]->SetTimeOut(1 * SECOND);
+	m_vpProcess[PROCESS_QUIT_BURN_STA]->SetRepeatTime(100 * MSECOND);
+	connect(m_vpProcess[PROCESS_QUIT_BURN_STA], SIGNAL(ProcessFinished(QString)), this, SLOT(ProcessEnd(QString)));
+	connect(m_vpProcess[PROCESS_QUIT_BURN_STA], SIGNAL(ProcessInfo(QString)), this, SLOT(ProcessInfo(QString)));
+
+	CMessage msg_QuitBurnSta("msg_quit_burn_sta");
+	msg_QuitBurnSta.SetMessageType(EN_SERIAL);
+	unsigned char quitBurnSta[13] = { 0x55,0xAA,0x05,0x00,0x02,0xF0,0x22,0x00,0x00,0x00,0x00,0x00,0x00 };
+	msg_QuitBurnSta.SetBatchData(quitBurnSta, 13);
+	m_vpProcess[PROCESS_QUIT_BURN_STA]->BindSendMessage(msg_QuitBurnSta);
+
 }
 
 void mainframe::PrintInfo(QColor& col, QString strInfo)
@@ -212,21 +248,29 @@ void mainframe::Burn()
 		ui.groupBoxSerialSetting->setEnabled(false);
 		if (m_vpProcess[PROCESS_ENTER_BURN_STA] != NULL)
 		{
+#if 0
 			m_vpProcess[PROCESS_ENTER_BURN_STA]->BindInterface((void*)&m_stSerialConfigInfo);
 			m_vpProcess[PROCESS_UPLOAD_BIN]->BindInterface((void*)&m_stSerialConfigInfo);
 			m_vpProcess[PROCESS_CHECK]->BindInterface((void*)&m_stSerialConfigInfo);
+			m_vpProcess[PROCESS_QUIT_BURN_STA]->BindInterface((void*)&m_stSerialConfigInfo);
+#endif
+			for(int i = 0; i<m_vpProcess.size(); i++)
+				m_vpProcess[i]->BindInterface((void*)&m_stSerialConfigInfo);
+			
 			m_vpProcess[PROCESS_ENTER_BURN_STA]->start();
-			//PrintInfo(COLOR_BLACK, QString("Process \"%1\" have been started!").arg(m_vpProcess[PROCESS_ENTER_BURN_STA]->GetName()));
+			
+			CProcessUploadBin* pUploadBin = (CProcessUploadBin*)m_vpProcess[PROCESS_UPLOAD_BIN];
+			pUploadBin->ReadBin(m_strBinPath);
+
+			CProcessCheck* pCheck = (CProcessCheck*)m_vpProcess[PROCESS_CHECK];
+			pCheck->SetBinInfo(pUploadBin->GetBinLength(), pUploadBin->GetCrc32());
+
+			CProcessDownloadBin* pDownloadBin = (CProcessDownloadBin*)m_vpProcess[PROCESS_DOWNLOAD_BIN];
+			pDownloadBin->SetBinInfo(pUploadBin->GetBinLength());
 		}
 
 		ui.pushButtonBurn->setText("Stop");
 		m_bHaveStarted = true;
-
-		CProcessUploadBin* pTemp = (CProcessUploadBin*)m_vpProcess[PROCESS_UPLOAD_BIN];
-		pTemp->ReadBin(m_strBinPath);
-
-		CProcessCheck* pTemp1 = (CProcessCheck*)m_vpProcess[PROCESS_CHECK];
-		pTemp1->SetBinInfo(pTemp->GetBinLength(), pTemp->GetCrc32());
 	}
 	else				//if the process have started
 	{
