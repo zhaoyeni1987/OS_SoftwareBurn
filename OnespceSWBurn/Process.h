@@ -10,7 +10,8 @@
 typedef struct
 {
 	char strComName[50];
-	QSerialPort::BaudRate baudRate;
+	//QSerialPort::BaudRate baudRate;
+	int baudRate;
 	QSerialPort::DataBits dataBit;
 	QSerialPort::Parity parity;
 	QSerialPort::FlowControl flowControl;

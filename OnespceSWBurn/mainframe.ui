@@ -120,6 +120,11 @@
             <string>115200</string>
            </property>
           </item>
+          <item>
+           <property name="text">
+            <string>256000</string>
+           </property>
+          </item>
          </widget>
         </item>
        </layout>

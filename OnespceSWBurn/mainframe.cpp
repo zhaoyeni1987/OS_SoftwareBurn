@@ -40,9 +40,9 @@ mainframe::mainframe(QWidget *parent)
 		ui.comboBoxSerialPort->addItem(list.at(i).portName());
 	}
 
-	ui.comboBoxBaud->setCurrentIndex(7);
+	ui.comboBoxBaud->setCurrentIndex(8);
 	ui.comboBoxDataBit->setCurrentIndex(3);//set data bit 8
-	ui.comboBoxCheckBit->setCurrentIndex(2);
+	ui.comboBoxCheckBit->setCurrentIndex(1);
 
 	ui.pushButtonBurn->setEnabled(false);
 	ui.progressBar->setEnabled(false);
@@ -100,7 +100,7 @@ void mainframe::PrepareProcess()
 	m_vpProcess.append(pUploadBin);
 
 	m_vpProcess[PROCESS_UPLOAD_BIN]->SetTimeOut(2000 * SECOND);
-	m_vpProcess[PROCESS_UPLOAD_BIN]->SetRepeatTime(10 * MSECOND);
+	m_vpProcess[PROCESS_UPLOAD_BIN]->SetRepeatTime(20 * MSECOND);
 	connect(m_vpProcess[PROCESS_UPLOAD_BIN], SIGNAL(ProcessFinished(QString)), this, SLOT(ProcessEnd(QString)));
 	connect(m_vpProcess[PROCESS_UPLOAD_BIN], SIGNAL(ProcessInfo(QString)), this, SLOT(ProcessInfo(QString)));
 	CProcessUploadBin* pUploadBin1 = (CProcessUploadBin*)m_vpProcess[PROCESS_UPLOAD_BIN];
@@ -117,8 +117,8 @@ void mainframe::PrepareProcess()
 	CProcess* pCheck = new CProcessCheck;
 	m_vpProcess.append(pCheck);
 
-	m_vpProcess[PROCESS_CHECK]->SetTimeOut(1 * SECOND);
-	m_vpProcess[PROCESS_CHECK]->SetRepeatTime(100 * MSECOND);
+	m_vpProcess[PROCESS_CHECK]->SetTimeOut(200 * SECOND);
+	m_vpProcess[PROCESS_CHECK]->SetRepeatTime(1000 * MSECOND);
 	connect(m_vpProcess[PROCESS_CHECK], SIGNAL(ProcessFinished(QString)), this, SLOT(ProcessEnd(QString)));
 	connect(m_vpProcess[PROCESS_CHECK], SIGNAL(ProcessInfo(QString)), this, SLOT(ProcessInfo(QString)));
 
@@ -128,12 +128,13 @@ void mainframe::PrepareProcess()
 	msg_Check.SetBatchData(check, 8);
 	m_vpProcess[PROCESS_CHECK]->BindSendMessage(msg_Check);
 
+#if 1
 	//------------process: download bin
 	CProcess* pDownloadBin = new CProcessDownloadBin;
 	m_vpProcess.append(pDownloadBin);
 
-	m_vpProcess[PROCESS_DOWNLOAD_BIN]->SetTimeOut(1000 * SECOND);
-	m_vpProcess[PROCESS_DOWNLOAD_BIN]->SetRepeatTime(10 * MSECOND);
+	m_vpProcess[PROCESS_DOWNLOAD_BIN]->SetTimeOut(2000 * SECOND);
+	m_vpProcess[PROCESS_DOWNLOAD_BIN]->SetRepeatTime(30 * MSECOND);
 	connect(m_vpProcess[PROCESS_DOWNLOAD_BIN], SIGNAL(ProcessFinished(QString)), this, SLOT(ProcessEnd(QString)));
 	connect(m_vpProcess[PROCESS_DOWNLOAD_BIN], SIGNAL(ProcessInfo(QString)), this, SLOT(ProcessInfo(QString)));
 	CProcessDownloadBin* pDownloadBin1 = (CProcessDownloadBin*)m_vpProcess[PROCESS_DOWNLOAD_BIN];
@@ -159,7 +160,7 @@ void mainframe::PrepareProcess()
 	unsigned char quitBurnSta[13] = { 0x55,0xAA,0x05,0x00,0x02,0xF0,0x22,0x00,0x00,0x00,0x00,0x00,0x00 };
 	msg_QuitBurnSta.SetBatchData(quitBurnSta, 13);
 	m_vpProcess[PROCESS_QUIT_BURN_STA]->BindSendMessage(msg_QuitBurnSta);
-
+#endif
 }
 
 void mainframe::PrintInfo(QColor& col, QString strInfo)
@@ -232,7 +233,8 @@ void mainframe::GetSerialPortInfo()
 	strcpy(m_stSerialConfigInfo.strComName, strPortName.toLatin1().data());
 
 	QString strBaudrate = ui.comboBoxBaud->currentText();
-	m_stSerialConfigInfo.baudRate = (QSerialPort::BaudRate)strBaudrate.toInt();
+	//m_stSerialConfigInfo.baudRate = (QSerialPort::BaudRate)strBaudrate.toInt();
+	m_stSerialConfigInfo.baudRate = strBaudrate.toInt();
 
 	m_stSerialConfigInfo.dataBit = (QSerialPort::DataBits)ui.comboBoxDataBit->currentText().toInt();
 
